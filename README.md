@@ -1,7 +1,7 @@
 ### GISAID Epiflu crawler
 #### Install
 ```shell
-pip install git+https://github.com/cijinsama/GISAID-Epiflu-crawler.git
+pip install git+https://gitlab.lji.org/einav/GISAID-Epiflu-crawler.git
 ```
 #### Usage
 ```shell
