@@ -64,3 +64,9 @@ def parse_daterange(date:str):
     if end_date_str != "":
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
     return start_date, end_date
+
+def merge_fasta(downloaded_stack, path):
+    with open(path, "w") as outfile:
+        for filename in downloaded_stack:
+            with open(filename, "r") as infile:
+                outfile.write(infile.read())

@@ -3,7 +3,8 @@ import textwrap
 import sys
 import os
 from .shared import IPipeline
-from .util import Registry, parse_daterange
+from .util import Registry, parse_daterange, merge_fasta
+from datetime import timedelta
 import abc
 from typing import Union
 import time
@@ -94,6 +95,12 @@ class EpiFlu(IPipeline):
             help="Which file you want to download. protein for fasta and meta for csv"
         )
         pipeline_parser.add_argument(
+            "--Download_dir",
+            type=str,
+            default="./downloads",
+            help="Download dir"
+        )
+        pipeline_parser.add_argument(
             "--Timeout",
             type=int,
             default=5,
@@ -116,27 +123,52 @@ class EpiFlu(IPipeline):
         Timeout,
         Username, 
         Password,
+        Download_dir,
         **kwargs
     ):
-        from .chrome import setup_driver, login, goto_SearchPage, search, select_all, goto_download_frame, download_meta, download_protein, filters
+        from .chrome import setup_driver, login, goto_SearchPage, search, select_all, goto_download_frame, download_meta, download_protein, filters, TooMuchSeqError, wait_for_downloads
         start_date, end_date = parse_daterange(Submission_Date)
-        driver = setup_driver()
-        try:
-            login(driver, Username, Password, Timeout)
-            goto_SearchPage(driver, Timeout)
-            filters(driver, SearchPatterns, Type, H, N, Host, start_date, end_date, Segments, not_complete, Timeout)
-            search(driver, Timeout)
-            select_all(driver, Timeout)
-            goto_download_frame(driver, Timeout)
-            if Format == "meta":
-                download_meta(driver, Timeout)
-            elif Format == "protein":
-                download_protein(driver, Timeout, HeaderPattern)
-            else:
-                raise ValueError(f"Unknown format {Format}")
-            print("Waiting for the download to complete...", flush=True)
-            input("After Downloading, press any key to exit.")
-        finally:
-            print("Quit driver.", flush=True)
-            driver.quit()
+        original_start_date, original_end_date = start_date, end_date
+        date_stack = [(start_date, end_date)]
+        downloaded_stack = []
+        while len(date_stack) > 0:
+            start_date, end_date = date_stack.pop()
+            try:
+                driver = setup_driver(Download_dir)
+                login(driver, Username, Password, Timeout)
+                goto_SearchPage(driver, Timeout)
+                filters(driver, SearchPatterns, Type, H, N, Host, start_date, end_date, Segments, not_complete, Timeout)
+                try:
+                    search(driver, Timeout)
+                except TooMuchSeqError:
+                    if start_date is not None and end_date is not None:
+                        mid_date = start_date + (end_date - start_date) / 2
+                        date_stack.append((start_date, mid_date))
+                        date_stack.append((mid_date + timedelta(days=1), end_date))
+                        print("Split date and retrying...")
+                    else:
+                        raise NotImplementedError("Currently don't support None date split. Please split date by yourself.")
+                    continue
+                select_all(driver, Timeout)
+                goto_download_frame(driver, Timeout)
+                if Format == "meta":
+                    download_meta(driver, Timeout)
+                    print("Waiting for the download to complete...", flush=True)
+                    wait_for_downloads(os.path.join(Download_dir, "gisaid_epiflu_sequence.csv"))
+                elif Format == "protein":
+                    target = os.path.join(Download_dir, "gisaid_epiflu_sequence.fasta")
+                    download_protein(driver, Timeout, HeaderPattern, Segments)
+                    print("Waiting for the download to complete...", flush=True)
+                    wait_for_downloads(target)
+                    os.rename(target, os.path.join(Download_dir, f"{start_date.strftime('%Y-%m-%d') if start_date is not None else ''}_{end_date.strftime('%Y-%m-%d') if end_date is not None else ''}.fasta"))
+                    downloaded_stack.append(os.path.join(Download_dir, f"{start_date.strftime('%Y-%m-%d') if start_date is not None else ''}_{end_date.strftime('%Y-%m-%d') if end_date is not None else ''}.fasta"))
+                else:
+                    raise ValueError(f"Unknown format {Format}")
+            finally:
+                print("Quit driver.", flush=True)
+                driver.quit()
+        if Format == "protein":
+            merge_fasta(downloaded_stack, os.path.join(Download_dir, f"{original_start_date}_{original_end_date}.fasta"))
+            for file in downloaded_stack:
+                os.remove(file)
         return 0

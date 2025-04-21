@@ -29,20 +29,26 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 import time
 import re
+import os
+class TooMuchSeqError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
 
 def print_retry():
     print("Element reference is stale, retrying...")
 
-def setup_driver():
+def setup_driver(download_dir):
     chrome_options = Options()
     # chrome_options.add_argument('--headless')
     # chrome_options.add_argument('--no-sandbox')
     # chrome_options.add_argument('--disable-gpu')
     # chrome_options.add_argument('--disable-dev-shm-usage')
+    os.makedirs(download_dir, exist_ok=True)
     prefs = {
         "download.prompt_for_download": False,  # Disable the download prompt
         "directory_upgrade": True,  # Allow changing the download directory
-        "profile.managed_default_content_settings.images": 2
+        "download.default_directory": os.path.abspath(download_dir),
+        "profile.managed_default_content_settings.images": 2,
     }
     chrome_options.add_experimental_option("prefs", prefs)
 
@@ -222,6 +228,7 @@ def goto_download_frame(driver, timeout):
         new_download_button = WebDriverWait(driver, timeout).until(
             EC.element_to_be_clickable((By.XPATH, ".//button[text()='Download']"))
         )
+        wait_spinning_loader(driver, timeout)
         new_download_button.click()
 
         # Enter iframe
@@ -250,8 +257,16 @@ def search(driver, timeout):
     viruses, sequences = get_virus_and_sequence_numbers(driver, timeout)
     if sequences < 1:
         raise ValueError("Find 0 sequence. Change your filter")
+    elif sequences >= 20000:
+        raise TooMuchSeqError(f"Found more than 20000 sequences({sequences}). Try to split date.")
     else:
         print(f"Found {viruses} viruses and {sequences} sequences")
+
+def click_back(driver, timeout):
+    button_element = WebDriverWait(driver, timeout).until(
+        expected_conditions.element_to_be_clickable((By.XPATH, "//button[text()='Go back']"))
+    )
+    button_element.click()
 
 def get_virus_and_sequence_numbers(driver, timeout):
     element = WebDriverWait(driver, timeout).until(
@@ -296,7 +311,7 @@ def download_meta(driver, timeout):
     )
     second_download_button.click()
 
-def download_protein(driver, timeout, header_pattern):
+def download_protein(driver, timeout, header_pattern, Segments):
     # Select "Sequences (proteins) as FASTA"
     checkbox = WebDriverWait(driver, timeout).until(
         EC.element_to_be_clickable((By.XPATH, "//input[contains(@class, 'sys-event-hook') and @type='radio' and @value='proteins']"))
@@ -305,7 +320,7 @@ def download_protein(driver, timeout, header_pattern):
     
     # Select Proteins as "all"
     checkbox = WebDriverWait(driver, timeout).until(
-        EC.element_to_be_clickable((By.XPATH, "//input[contains(@class, 'sys-event-hook') and @type='checkbox' and @value='all']"))
+        EC.element_to_be_clickable((By.XPATH, f"//input[contains(@class, 'sys-event-hook') and @type='checkbox' and @value='{Segments}']"))
     )
     checkbox.click()
 
@@ -323,3 +338,8 @@ def download_protein(driver, timeout, header_pattern):
         EC.element_to_be_clickable((By.XPATH, ".//button[text()='Download']"))
     )
     second_download_button.click()
+
+def wait_for_downloads(path):
+    while not os.path.exists(path):
+        time.sleep(1)
+    return

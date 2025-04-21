@@ -42,3 +42,8 @@ pipeline:
                         Which file you want to download. protein for fasta and meta for csv
   --Timeout TIMEOUT     Time to prevent stucking
 ```
+
+You can also use it with python
+```python
+
+```
