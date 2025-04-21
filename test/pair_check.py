@@ -1,5 +1,5 @@
 from Bio import SeqIO
-fasta_file = "/home/cijin/Downloads/gisaid_epiflu_sequence.fasta"
+fasta_file = "./download/OLD.fasta"
 fasta_file = "./download/2023-01-01_2023-12-31.fasta"
 
 tgt_sequences = {}
@@ -17,5 +17,6 @@ for k in tgt_sequences:
         continue
     if tgt_sequences[k] != src_sequences[k]:
         unpair_key.append(k)
+print(missing_key)
 print(f"{len(missing_key)}/{len(tgt_sequences)}")
 print(f"{len(unpair_key)}/{len(tgt_sequences)}")

@@ -2,10 +2,10 @@ from Crawler_GISAID.pipeline import EpiFlu
 EpiFlu(
     "",
     "A",
-    "3",
-    "2",
+    "1", #H
+    "1", #N
     Host="Human",
-    Submission_Date="2022-01-01_2022-12-31",
+    Submission_Date="2023-01-01_2023-12-31",
     Segments="HA",
     not_complete=False,
     Format="protein",
