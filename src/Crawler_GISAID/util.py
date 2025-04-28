@@ -66,6 +66,8 @@ def parse_daterange(date:str):
     return start_date, end_date
 
 def merge_fasta(downloaded_stack, path):
+    if len(downloaded_stack) <= 1:
+        return
     with open(path, "w") as outfile:
         for filename in downloaded_stack:
             with open(filename, "r") as infile:
