@@ -147,6 +147,13 @@ def select_N(driver, N, timeout):
         Select(n_select).select_by_visible_text(N)
     wait_spinning_loader(driver, timeout)
 
+def select_Lineage(driver, Lineage, timeout):
+    lineage_select = get_select_by_header(driver, timeout, "Lineage")
+    Select(lineage_select).deselect_all()
+    if Lineage is not None and len(Lineage) > 0:
+        Select(lineage_select).select_by_visible_text(Lineage)
+    wait_spinning_loader(driver, timeout)
+
 def select_Host(driver, Host, timeout):
     host_select = get_select_by_header(driver, timeout, "Host")
     Select(host_select).deselect_all()
@@ -173,10 +180,11 @@ def select_Required_Segments(driver, Segments, timeout):
     segment_div = driver.find_element(By.XPATH, "//div[text()='Required Segments']")
     parent_td = segment_div.find_element(By.XPATH, "./ancestor::td[1]")
     next_td = parent_td.find_element(By.XPATH, f"./following-sibling::td")
-    checkbox = WebDriverWait(next_td, timeout).until(
-        expected_conditions.presence_of_element_located((By.XPATH, f'//input[@type="checkbox" and @value="{Segments}"]'))
-    )
-    checkbox.click()
+    for segment in Segments:
+        checkbox = WebDriverWait(next_td, timeout).until(
+            expected_conditions.presence_of_element_located((By.XPATH, f'//input[@type="checkbox" and @value="{segment}"]'))
+        )
+        checkbox.click()
     while not checkbox.is_selected():
         print_retry()
         time.sleep(1)
@@ -237,11 +245,12 @@ def goto_download_frame(driver, timeout):
         )
         driver.switch_to.frame(iframe)
 
-def filters(driver, SearchPatterns, Type, H, N, Host, start_date, end_date, Segments, not_complete, timeout):
+def filters(driver, SearchPatterns, Type, H, N, Lineage, Host, start_date, end_date, Segments, not_complete, timeout):
     input_SearchPatterns(driver, SearchPatterns, timeout)
     select_type(driver, Type, timeout)
     select_H(driver, H, timeout)
     select_N(driver, N, timeout)
+    select_Lineage(driver, Lineage, timeout)
     select_Host(driver, Host, timeout)
     input_Submission_Date(driver, start_date, end_date, timeout)
     select_Required_Segments(driver, Segments, timeout)
@@ -318,11 +327,13 @@ def download_protein(driver, timeout, header_pattern, Segments):
     )
     checkbox.click()
     
-    # Select Proteins as "all"
-    checkbox = WebDriverWait(driver, timeout).until(
-        EC.element_to_be_clickable((By.XPATH, f"//input[contains(@class, 'sys-event-hook') and @type='checkbox' and @value='{Segments}']"))
-    )
-    checkbox.click()
+    # Select Proteins
+    #TODO: If you want to correspond different segment, use a map here
+    for segment in Segments:
+        checkbox = WebDriverWait(driver, timeout).until(
+            EC.element_to_be_clickable((By.XPATH, f"//input[contains(@class, 'sys-event-hook') and @type='checkbox' and @value='{segment}']"))
+        )
+        checkbox.click()
 
     # Enter the FASTA Header
     fasta_header_input = WebDriverWait(driver, timeout).until(

@@ -58,6 +58,12 @@ class EpiFlu(IPipeline):
             help="Virus type"
         )
         pipeline_parser.add_argument(
+            "--Lineage",
+            type=str,
+            default="",
+            help="Family tree"
+        )
+        pipeline_parser.add_argument(
             "--Host",
             type=str,
             default="Human",
@@ -74,7 +80,8 @@ class EpiFlu(IPipeline):
         pipeline_parser.add_argument(
             "--Segments",
             type=str,
-            default="HA",
+            nargs="+",
+            default=["HA"],
         )
         pipeline_parser.add_argument(
             "--HeaderPattern",
@@ -114,6 +121,7 @@ class EpiFlu(IPipeline):
         Type,
         H,
         N,
+        Lineage,
         Host,
         Submission_Date,
         Segments,
@@ -137,7 +145,7 @@ class EpiFlu(IPipeline):
                 driver = setup_driver(Download_dir)
                 login(driver, Username, Password, Timeout)
                 goto_SearchPage(driver, Timeout)
-                filters(driver, SearchPatterns, Type, H, N, Host, start_date, end_date, Segments, not_complete, Timeout)
+                filters(driver, SearchPatterns, Type, H, N, Lineage, Host, start_date, end_date, Segments, not_complete, Timeout)
                 try:
                     search(driver, Timeout)
                 except TooMuchSeqError:
