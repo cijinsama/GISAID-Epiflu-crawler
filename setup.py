@@ -4,7 +4,7 @@ REQUIREMENTS = [i.strip() for i in open("requirements.txt").readlines()]
 
 setup(
     name="Crawler_GISAID",
-    version="0.1",
+    version="0.2",
     author="yiliu",
     author_email="yil349@ucsd.edu",
     packages=find_packages("src"),

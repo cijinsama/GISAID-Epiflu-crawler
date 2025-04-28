@@ -112,7 +112,7 @@ class EpiFlu(IPipeline):
         pipeline_parser.add_argument(
             "--Download_dir",
             type=str,
-            default="./downloads",
+            default="downloads",
             help="Download dir"
         )
         pipeline_parser.add_argument(
@@ -185,7 +185,7 @@ class EpiFlu(IPipeline):
                 print("Quit driver.", flush=True)
                 driver.quit()
         if Format == "protein":
-            merge_fasta(downloaded_stack, os.path.join(Download_dir, f"{original_start_date}_{original_end_date}.fasta"))
+            merge_fasta(downloaded_stack, os.path.join(Download_dir, f"{original_start_date.strftime('%Y-%m-%d')}_{original_end_date.strftime('%Y-%m-%d')}.fasta"))
             for file in downloaded_stack:
                 os.remove(file)
         return 0
