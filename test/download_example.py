@@ -53,7 +53,7 @@ EpiFlu(
     "", #N
     "Victoria",
     Host="Human",
-    Submission_Date="2023-01-01_2023-12-31",
+    Submission_Date="2023-01-01_2023-02-28",
     Required_Segments=["HA"],
     Download_Segments=["HA"],
     not_complete=False,
