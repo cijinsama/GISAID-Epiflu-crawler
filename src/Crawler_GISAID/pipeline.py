@@ -186,6 +186,4 @@ class EpiFlu(IPipeline):
                 driver.quit()
         if Format == "protein":
             merge_fasta(downloaded_stack, os.path.join(Download_dir, f"{original_start_date.strftime('%Y-%m-%d')}_{original_end_date.strftime('%Y-%m-%d')}.fasta"))
-            for file in downloaded_stack:
-                os.remove(file)
         return 0

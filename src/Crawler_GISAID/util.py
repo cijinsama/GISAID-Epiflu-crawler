@@ -72,3 +72,5 @@ def merge_fasta(downloaded_stack, path):
         for filename in downloaded_stack:
             with open(filename, "r") as infile:
                 outfile.write(infile.read())
+    for file in downloaded_stack:
+        os.remove(file)
