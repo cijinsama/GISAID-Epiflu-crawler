@@ -78,10 +78,18 @@ class EpiFlu(IPipeline):
             help="Sequence submission date. Input string like 2020-12-11_2023-02-23. It can also be _2023-02-23 for no start date or 2023-02-23_ for no end date"
         )
         pipeline_parser.add_argument(
-            "--Segments",
+            "--Required_Segments",
             type=str,
             nargs="+",
             default=["HA"],
+            help="Required Segments to filter sequence."
+        )
+        pipeline_parser.add_argument(
+            "--Download_Segments",
+            type=str,
+            nargs="+",
+            default=["HA"],
+            help="Which segments to include in FASTA file"
         )
         pipeline_parser.add_argument(
             "--HeaderPattern",
@@ -124,7 +132,8 @@ class EpiFlu(IPipeline):
         Lineage,
         Host,
         Submission_Date,
-        Segments,
+        Required_Segments,
+        Download_Segments,
         not_complete,
         Format,
         HeaderPattern,
@@ -145,7 +154,7 @@ class EpiFlu(IPipeline):
                 driver = setup_driver(Download_dir)
                 login(driver, Username, Password, Timeout)
                 goto_SearchPage(driver, Timeout)
-                filters(driver, SearchPatterns, Type, H, N, Lineage, Host, start_date, end_date, Segments, not_complete, Timeout)
+                filters(driver, SearchPatterns, Type, H, N, Lineage, Host, start_date, end_date, Required_Segments, not_complete, Timeout)
                 try:
                     search(driver, Timeout)
                 except TooMuchSeqError:
@@ -165,7 +174,7 @@ class EpiFlu(IPipeline):
                     wait_for_downloads(os.path.join(Download_dir, "gisaid_epiflu_sequence.csv"))
                 elif Format == "protein":
                     target = os.path.join(Download_dir, "gisaid_epiflu_sequence.fasta")
-                    download_protein(driver, Timeout, HeaderPattern, Segments)
+                    download_protein(driver, Timeout, HeaderPattern, Download_Segments)
                     print("Waiting for the download to complete...", flush=True)
                     wait_for_downloads(target)
                     os.rename(target, os.path.join(Download_dir, f"{start_date.strftime('%Y-%m-%d') if start_date is not None else ''}_{end_date.strftime('%Y-%m-%d') if end_date is not None else ''}.fasta"))
